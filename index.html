@@ -6,15 +6,16 @@
 <script>
 var snakeBeginSize = 3;
 var cellSize = 5;
-var snakeBody = [];
+var player = [];
 var gridWidth;
 var gridHeight;
+var food;
 
 function startGame() {
 	game.initializeGrid();
 	gridWidth = game.gWidth;
 	gridHeight = game.gHeight;
-	snakeBody = new snake((game.gWidth / 2) * cellSize + 3, (game.gHeight / 2) * cellSize + 3);
+	player = new snake((game.gWidth / 2) * cellSize + 3, (game.gHeight / 2) * cellSize + 3);
     game.start();
 }
 
@@ -23,6 +24,8 @@ var game = {
     start : function() {
 		this.canvas.style = "height: 100%; width: 100%; border: 1px solid black";
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+		generateFood();
+		this.interval = setInterval(updateSnake, 150);
 	},
 	initializeGrid: function() {
 		// make sure the grid has equally sized (5x5) cells (no extra white pixels out of nowhere)
@@ -58,27 +61,77 @@ function circle(x, y, isFilled) {
 }
 
 function snake(headX, headY) {
-	this.size = snakeBeginSize;
-	this.headX = headX;
-	this.headY = headY;
-	this.direction = "r"; // right
+	this.size = snakeBeginSize - 1;
+	this.head = new circle(headX, headY, true);
+	this.body = [];
+	this.direction = "r";
 	
-	//for (var i = 0; i < this.size; i++) {
-		this[0] = new circle(this.headX - (0 * cellSize), this.headY, true);
-	//}
-	this.moveBody = function() {
-		this[this.size - 1].clear();
-		for (var i = this.size - 1; i > 0; i--) {
-			this[i].x = this[i - 1].x;
-			this[i].y = this[i - 1].y;
+	this.move = function() {
+		var futureHeadX = this.head.x;
+		var futureHeadY = this.head.y;
+		switch (this.direction) {
+		case "u":
+			futureHeadY = (this.head.y - 5) % (gridHeight * 5);
+			break;
+		case "d":
+			futureHeadY = (this.head.y + 5) % (gridHeight * 5);
+			break;
+		case "l":
+			futureHeadX = (this.head.x - 5) % (gridWidth * 5);
+			break;
+		case "r":
+			futureHeadX = (this.head.x + 5) % (gridWidth * 5);
 		}
+		
+		if (this.isOn(futureHeadX, futureHeadY)) {
+			clearInterval(game.interval);
+			return;
+		}
+		
+		if (futureHeadX != food.x || futureHeadY != food.y) {
+			this.body[this.size - 1].clear();
+		} else {
+			this.body[this.size] = new circle(this.body[this.size - 1].x, this.body[this.size - 1].y, true);
+			this.size++;
+			generateFood();
+		}
+		for (var i = this.size - 1; i > 0; i--) {
+			this.body[i].x = this.body[i - 1].x;
+			this.body[i].y = this.body[i - 1].y;
+		}
+		this.body[0].x = this.head.x;
+		this.body[0].y = this.head.y;
+		
+		this.head = new circle(futureHeadX, futureHeadY, true);
 	}
-	this.update = function() {
-		snakeBody[0].clear();
-		snakeBody[0] = new circle((snakeBody.headX += 5) % (gridWidth * 5), snakeBody.headY, true);
+	this.isOn = function(x, y) {
+		for (var i = 0; i < this.size; i++) {
+			if (this.body[i].x == x && this.body[i].y == y) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
-	this.interval = setInterval(this.update, 100);
+	
+	for (var i = 0; i <= this.size - 1; i++) {
+		
+		this.body[i] = new circle(this.head.x - ((i + 1) * cellSize), this.head.y, true);
+	}
+	
+}
+
+function generateFood() {
+	var foodX, foodY;
+	do {
+		foodX = (Math.floor(Math.random() * gridWidth) * 5) + 3;
+		foodY = (Math.floor(Math.random() * gridHeight) * 5) + 3;
+	} while (player.isOn(foodX, foodY));
+	food = new circle(foodX, foodY, false);
+}
+
+function updateSnake() {
+	player.move();
 }
 
 
