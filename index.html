@@ -25,7 +25,22 @@ var game = {
 		this.canvas.style = "height: 100%; width: 100%; border: 1px solid black";
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
 		generateFood();
-		this.interval = setInterval(updateSnake, 150);
+		this.interval = setInterval(updateSnake, 150); 
+		window.addEventListener('keypress', function (e) {
+            switch (e.keyCode) {
+			case 37: 
+				player.direction = "l";
+				break;
+			case 38:
+				player.direction = "u";
+				break;
+			case 39:
+				player.direction = "r";
+				break;
+			case 40:
+				player.direction = "d";
+			}
+        })
 	},
 	initializeGrid: function() {
 		// make sure the grid has equally sized (5x5) cells (no extra white pixels out of nowhere)
@@ -71,13 +86,13 @@ function snake(headX, headY) {
 		var futureHeadY = this.head.y;
 		switch (this.direction) {
 		case "u":
-			futureHeadY = (this.head.y - 5) % (gridHeight * 5);
+			futureHeadY = (this.head.y == 3) ? (gridHeight * 5 - 2) : (this.head.y - 5) % (gridHeight * 5);
 			break;
 		case "d":
 			futureHeadY = (this.head.y + 5) % (gridHeight * 5);
 			break;
 		case "l":
-			futureHeadX = (this.head.x - 5) % (gridWidth * 5);
+			futureHeadX = (this.head.x == 3) ? (gridWidth * 5 - 2) : (this.head.x - 5) % (gridWidth * 5);
 			break;
 		case "r":
 			futureHeadX = (this.head.x + 5) % (gridWidth * 5);
