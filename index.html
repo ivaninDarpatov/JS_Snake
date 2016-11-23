@@ -1,9 +1,28 @@
 <html>
 <head>
-<script src="js/snake.js"></script>
+	<link rel="stylesheet" href="css/style.css">
+	<script src="js/snake.js"></script>
 </head>
-<body onload="startGame()" style="background-color: black">
-
-
+<body onload="initializeGame()">
+	<div id="sidebar">
+		<div id="score_container"></div>
+		<div id="menu_container">
+			<button class="menu_button" onclick="toggleMenu()";>MENU</button>
+			<div id="menu_list">
+				<button class="menu_button" onclick="startGame()">start game</button>
+				<button class="menu_button" onclick="toggleShowSpeeds()">set speed</button>
+					<div id="speeds_list">
+						<button class="menu_button" class="speed_option" onclick="setSpeed(1)">1</button>
+						<button class="menu_button" class="speed_option" onclick="setSpeed(2)">2</button>
+						<button class="menu_button" class="speed_option" onclick="setSpeed(3)">3</button>
+						<button class="menu_button" class="speed_option" onclick="setSpeed(4)">4</button>
+						<button class="menu_button" class="speed_option" onclick="setSpeed(5)">5</button>
+						<button class="menu_button" class="speed_option" onclick="setSpeed(6)">6</button>
+					</div>
+				<button id="high_score" class="menu_button" onclick="toggleSeeHighScore()">high score</button>
+				<div id="hs_container"></div>
+			</div>
+		</div>
+	</div>
 </body>
 </html>

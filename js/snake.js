@@ -1,26 +1,34 @@
 var snakeBeginSize = 3;
 var cellSize = 5;
-var player = [];
-var gridWidth;
-var gridHeight;
+var speed = 3;
+var highScore = 0;
+
+var player;
 var food;
 
-function startGame() {
+function initializeGame(food = false) {
 	game.initializeGrid();
-	gridWidth = game.gWidth;
-	gridHeight = game.gHeight;
-	player = new snake((game.gWidth / 2) * cellSize + 3, (game.gHeight / 2) * cellSize + 3);
-    game.start();
+	player = new snake((game.gWidth / 2) * cellSize, (game.gHeight / 2) * cellSize);
+	game.initialize(food);
 }
 
 var game = {
     canvas : document.createElement("canvas"),
-    start : function() {
-		this.canvas.style = "height: 99%; width: 100%; border: 1px solid black";
+	initialize: function(food) {
+		
+		this.canvas.id = "game_area";
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
-		generateFood();
-		this.interval = setInterval(updateSnake, 150); 
-		window.addEventListener('keypress', function (e) {
+		if (food) {
+			generateFood();
+		}
+		updateScore();
+	},
+    start : function() {
+		if (this.interval) {
+			clearInterval(this.interval);
+		}
+		this.interval = setInterval(updateSnake, 300 / speed); 
+		window.addEventListener("keypress", function (e) {
             switch (e.keyCode) {
 			case 37: 
 				player.direction = "l";
@@ -48,29 +56,26 @@ var game = {
 	}
 }
 
-function circle(x, y, isFilled) {
+function unit(x, y, isFilled) {
 	this.x = x;
 	this.y = y;
-	game.context.beginPath();
-	game.context.arc(x, y, 2, 0, 2 * Math.PI);
-	// make it dense
-	for (var i = 0; i < 5; i++) {
-	if (isFilled) {
-		game.context.fillStyle = "black";
-		game.context.fill();
-	} else {
-		game.context.strokeStyle = "black";
-		game.context.stroke();
-	}}
+	game.context.fillStyle = "black";
+	game.context.fillRect(x, y, 5, 5);
+	
+	if (!isFilled) {
+		game.context.fillStyle = "white";
+		game.context.fillRect(x + 1, y + 1, 3, 3);
+	}
 	this.clear = function() {	
 		game.context.fillStyle = "white";
-		game.context.fillRect(this.x - 3, this.y - 3, 5, 5);
+		game.context.fillRect(this.x, this.y, 5, 5);
 	}
 }
 
 function snake(headX, headY) {
 	this.size = snakeBeginSize - 1;
-	this.head = new circle(headX, headY, true);
+	this.score = 0;
+	this.head = new unit(headX, headY, true);
 	this.body = [];
 	this.direction = "r";
 	
@@ -79,28 +84,36 @@ function snake(headX, headY) {
 		var futureHeadY = this.head.y;
 		switch (this.direction) {
 		case "u":
-			futureHeadY = (this.head.y == 3) ? (gridHeight * 5 - 2) : (this.head.y - 5) % (gridHeight * 5);
+			futureHeadY = (this.head.y == 0) ? (game.gHeight * 5 - 5) : (this.head.y - 5) % (game.gHeight * 5);
 			break;
 		case "d":
-			futureHeadY = (this.head.y + 5) % (gridHeight * 5);
+			futureHeadY = (this.head.y + 5) % (game.gHeight * 5);
 			break;
 		case "l":
-			futureHeadX = (this.head.x == 3) ? (gridWidth * 5 - 2) : (this.head.x - 5) % (gridWidth * 5);
+			futureHeadX = (this.head.x == 0) ? (game.gWidth * 5 - 5) : (this.head.x - 5) % (game.gWidth * 5);
 			break;
 		case "r":
-			futureHeadX = (this.head.x + 5) % (gridWidth * 5);
+			futureHeadX = (this.head.x + 5) % (game.gWidth * 5);
 		}
 		
 		if (this.isOn(futureHeadX, futureHeadY)) {
 			clearInterval(game.interval);
+			var newHS = false;
+			if (this.score > highScore) {
+				highScore = this.score;
+				newHS = true;
+			}
+			
+			gameOver(newHS);
 			return;
 		}
 		
 		if (futureHeadX != food.x || futureHeadY != food.y) {
 			this.body[this.size - 1].clear();
 		} else {
-			this.body[this.size] = new circle(this.body[this.size - 1].x, this.body[this.size - 1].y, true);
+			this.body[this.size] = new unit(this.body[this.size - 1].x, this.body[this.size - 1].y, true);
 			this.size++;
+			this.score += speed;
 			generateFood();
 		}
 		for (var i = this.size - 1; i > 0; i--) {
@@ -110,7 +123,8 @@ function snake(headX, headY) {
 		this.body[0].x = this.head.x;
 		this.body[0].y = this.head.y;
 		
-		this.head = new circle(futureHeadX, futureHeadY, true);
+		this.head = new unit(futureHeadX, futureHeadY, true);
+		updateScore();
 	}
 	this.isOn = function(x, y) {
 		for (var i = 0; i < this.size; i++) {
@@ -124,7 +138,7 @@ function snake(headX, headY) {
 	
 	for (var i = 0; i <= this.size - 1; i++) {
 		
-		this.body[i] = new circle(this.head.x - ((i + 1) * cellSize), this.head.y, true);
+		this.body[i] = new unit(this.head.x - ((i + 1) * cellSize), this.head.y, true);
 	}
 	
 }
@@ -132,13 +146,80 @@ function snake(headX, headY) {
 function generateFood() {
 	var foodX, foodY;
 	do {
-		foodX = (Math.floor(Math.random() * gridWidth) * 5) + 3;
-		foodY = (Math.floor(Math.random() * gridHeight) * 5) + 3;
+		foodX = (Math.floor(Math.random() * game.gWidth) * 5);
+		foodY = (Math.floor(Math.random() * game.gHeight) * 5);
 	} while (player.isOn(foodX, foodY));
-	food = new circle(foodX, foodY, false);
+	food = new unit(foodX, foodY, false);
 }
 
 function updateSnake() {
 	player.move();
 }
 
+function updateScore() {
+	document.getElementById("score_container").innerHTML = "SCORE: " + player.score;
+}
+
+function gameOver(newHS) {
+	game.context.font = "30px Impact"; 
+	game.context.textAlign = "center";
+	var x = game.canvas.width / 2;
+	var y = game.canvas.height / 2;
+	game.context.fillText("GAME OVER", x, y);
+	if (newHS) {
+		game.context.font = "15px Arial";
+		y += game.canvas.height / 10;
+		game.context.fillText("new high score !", x, y);
+	}
+}
+//-------------------------------------------------------------------------------
+function toggleMenu() {
+	var paragraph = document.getElementById("menu_list");
+	
+	if (paragraph.style.display === "block" || paragraph.style.display === "") {
+		paragraph.style.display = "none";
+		document.getElementById("speeds_list").style.display = "none";
+	} else {
+		paragraph.style.display = "block";
+	}
+}
+
+function startGame() {
+	initializeGame(true);
+	game.start();
+}
+
+function toggleShowSpeeds() {
+	var paragraph = document.getElementById("speeds_list");
+	
+	if (paragraph.style.display === "block" || paragraph.style.display === "") {
+		paragraph.style.display = "none";
+	} else {
+		paragraph.style.display = "block";
+	}
+}
+
+function setSpeed(newSpeed) {
+	speed = newSpeed;
+	if (game.interval) {
+		clearInterval(game.interval);
+	}
+	game.interval = setInterval(updateSnake, 300 / speed); 
+}
+
+function toggleSeeHighScore() {
+	var container = document.getElementById("hs_container");
+	
+	if (container.style.display === "block" || container.style.display === "") {
+		container.style.display = "none";
+	} else {
+		container.style.display = "block";
+	container.innerHTML = highScore;
+	}
+}
+
+window.onclick = function(e) {
+	if (e.target.id != "high_score" && e.target.id != "hs_container") {
+		document.getElementById("hs_container").style.display = "none";
+	} 
+}
