@@ -1,0 +1,88 @@
+<html>
+<head>
+</head>
+<body onload="startGame()" style="background-color: black">
+
+<script>
+var snakeBeginSize = 3;
+var cellSize = 5;
+var snakeBody = [];
+var gridWidth;
+var gridHeight;
+
+function startGame() {
+	game.initializeGrid();
+	gridWidth = game.gWidth;
+	gridHeight = game.gHeight;
+	snakeBody = new snake((game.gWidth / 2) * cellSize + 3, (game.gHeight / 2) * cellSize + 3);
+    game.start();
+}
+
+var game = {
+    canvas : document.createElement("canvas"),
+    start : function() {
+		this.canvas.style = "height: 100%; width: 100%; border: 1px solid black";
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+	},
+	initializeGrid: function() {
+		// make sure the grid has equally sized (5x5) cells (no extra white pixels out of nowhere)
+		var WHRatio = this.canvas.width / this.canvas.height;
+		this.gWidth = this.canvas.width / cellSize; // number of available snake-square positions
+		this.gHeight = this.gWidth / WHRatio;
+		
+		var snakeHeadX = (this.gWidth / 2) * cellSize + 3; // +3 to get in the center of cell
+		var snakeHeadY = (this.gHeight / 2) * cellSize + 3;
+		
+        this.context = this.canvas.getContext("2d");
+		this.context.fillStyle = "white";
+		this.context.fillRect(0, 0, this.gWidth * 5, this.gHeight * 5);
+	}
+}
+
+function circle(x, y, isFilled) {
+	this.x = x;
+	this.y = y;
+	game.context.beginPath();
+	game.context.arc(x, y, 2, 0, 2 * Math.PI);
+	if (isFilled) {
+		game.context.fillStyle = "black";
+		game.context.fill();
+	} else {
+		game.context.strokeStyle = "black";
+		game.context.stroke();
+	}
+	this.clear = function() {	
+		game.context.fillStyle = "white";
+		game.context.fillRect(this.x - 3, this.y - 3, 5, 5);
+	}
+}
+
+function snake(headX, headY) {
+	this.size = snakeBeginSize;
+	this.headX = headX;
+	this.headY = headY;
+	this.direction = "r"; // right
+	
+	//for (var i = 0; i < this.size; i++) {
+		this[0] = new circle(this.headX - (0 * cellSize), this.headY, true);
+	//}
+	this.moveBody = function() {
+		this[this.size - 1].clear();
+		for (var i = this.size - 1; i > 0; i--) {
+			this[i].x = this[i - 1].x;
+			this[i].y = this[i - 1].y;
+		}
+	}
+	this.update = function() {
+		snakeBody[0].clear();
+		snakeBody[0] = new circle((snakeBody.headX += 5) % (gridWidth * 5), snakeBody.headY, true);
+	}
+	
+	this.interval = setInterval(this.update, 100);
+}
+
+
+</script>
+
+</body>
+</html>
