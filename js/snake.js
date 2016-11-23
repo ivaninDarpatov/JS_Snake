@@ -2,11 +2,13 @@ var snakeBeginSize = 3;
 var cellSize = 5;
 var speed = 3;
 var highScore = 0;
+var bonusInterval;
 
 var player;
 var food;
 
 function initializeGame(food = false) {
+	bonusInterval = 5;
 	game.initializeGrid();
 	player = new snake((game.gWidth / 2) * cellSize, (game.gHeight / 2) * cellSize);
 	game.initialize(food);
@@ -15,7 +17,6 @@ function initializeGame(food = false) {
 var game = {
     canvas : document.createElement("canvas"),
 	initialize: function(food) {
-		
 		this.canvas.id = "game_area";
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
 		if (food) {
@@ -57,6 +58,7 @@ var game = {
 }
 
 function unit(x, y, isFilled) {
+	this.special = isFilled;
 	this.x = x;
 	this.y = y;
 	game.context.fillStyle = "black";
@@ -96,14 +98,15 @@ function snake(headX, headY) {
 			futureHeadX = (this.head.x + 5) % (game.gWidth * 5);
 		}
 		
+
 		if (this.isOn(futureHeadX, futureHeadY)) {
 			clearInterval(game.interval);
 			var newHS = false;
+			
 			if (this.score > highScore) {
 				highScore = this.score;
 				newHS = true;
 			}
-			
 			gameOver(newHS);
 			return;
 		}
@@ -113,7 +116,11 @@ function snake(headX, headY) {
 		} else {
 			this.body[this.size] = new unit(this.body[this.size - 1].x, this.body[this.size - 1].y, true);
 			this.size++;
-			this.score += speed;
+			var addToScore = speed / 2;
+			if (food.special) {
+				addToScore *= 2;
+			}
+			this.score += addToScore;
 			generateFood();
 		}
 		for (var i = this.size - 1; i > 0; i--) {
@@ -144,12 +151,18 @@ function snake(headX, headY) {
 }
 
 function generateFood() {
+	var special = false;
+	if (player.size % bonusInterval == 0 && player.size > 2) {
+		bonusInterval += player.size + 1;
+		special = true;
+	}
+	
 	var foodX, foodY;
 	do {
 		foodX = (Math.floor(Math.random() * game.gWidth) * 5);
 		foodY = (Math.floor(Math.random() * game.gHeight) * 5);
 	} while (player.isOn(foodX, foodY));
-	food = new unit(foodX, foodY, false);
+	food = new unit(foodX, foodY, special);
 }
 
 function updateSnake() {
@@ -157,7 +170,10 @@ function updateSnake() {
 }
 
 function updateScore() {
-	document.getElementById("score_container").innerHTML = "SCORE: " + player.score;
+	document.getElementById("score_container").innerHTML = "SCORE: " + player.score +
+															"<br/>SPEED: " + speed +
+															"<br/>NEXT BONUS: " + (bonusInterval + 1) +
+															"<br/>SIZE: " + (player.size + 1);
 }
 
 function gameOver(newHS) {
@@ -169,7 +185,7 @@ function gameOver(newHS) {
 	if (newHS) {
 		game.context.font = "15px Arial";
 		y += game.canvas.height / 10;
-		game.context.fillText("new high score !", x, y);
+		game.context.fillText("new high score: " + highScore, x, y);
 	}
 }
 //-------------------------------------------------------------------------------
@@ -204,7 +220,8 @@ function setSpeed(newSpeed) {
 	if (game.interval) {
 		clearInterval(game.interval);
 	}
-	game.interval = setInterval(updateSnake, 300 / speed); 
+	game.interval = setInterval(updateSnake, 300 / speed);
+	updateScore();
 }
 
 function toggleSeeHighScore() {
