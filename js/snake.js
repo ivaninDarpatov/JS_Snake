@@ -28,7 +28,7 @@ var game = {
 		if (this.interval) {
 			clearInterval(this.interval);
 		}
-		this.interval = setInterval(updateSnake, 300 / speed); 
+		this.interval = setInterval(updateSnake, 300 / speed);
 		window.addEventListener("keypress", function (e) {
             switch (e.keyCode) {
 			case 37: 
@@ -54,7 +54,14 @@ var game = {
         this.context = this.canvas.getContext("2d");
 		this.context.fillStyle = "white";
 		this.context.fillRect(0, 0, this.gWidth * 5, this.gHeight * 5);
-	}
+	},
+	updateInterval: function() {
+		if (this.interval) {
+			clearInterval(this.interval);
+			this.interval = setInterval(updateSnake, 300 / speed);
+		}
+		updateScore();
+	}	
 }
 
 function unit(x, y, isFilled) {
@@ -142,7 +149,6 @@ function snake(headX, headY) {
 		return false;
 	}
 	
-	
 	for (var i = 0; i <= this.size - 1; i++) {
 		
 		this.body[i] = new unit(this.head.x - ((i + 1) * cellSize), this.head.y, true);
@@ -186,6 +192,11 @@ function gameOver(newHS) {
 		game.context.font = "15px Arial";
 		y += game.canvas.height / 10;
 		game.context.fillText("new high score: " + highScore, x, y);
+		
+		var hsContainer = document.getElementById("hs_container");
+		if (hsContainer.style.display == "block") {
+			hsContainer.innerHTML = highScore;
+		}
 	}
 }
 //-------------------------------------------------------------------------------
@@ -217,11 +228,7 @@ function toggleShowSpeeds() {
 
 function setSpeed(newSpeed) {
 	speed = newSpeed;
-	if (game.interval) {
-		clearInterval(game.interval);
-	}
-	game.interval = setInterval(updateSnake, 300 / speed);
-	updateScore();
+	game.updateInterval();
 }
 
 function toggleSeeHighScore() {
@@ -231,7 +238,7 @@ function toggleSeeHighScore() {
 		container.style.display = "none";
 	} else {
 		container.style.display = "block";
-	container.innerHTML = highScore;
+		container.innerHTML = highScore;
 	}
 }
 
